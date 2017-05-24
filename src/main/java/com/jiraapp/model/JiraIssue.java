@@ -4,6 +4,10 @@ import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+
 /**
  * Created by Infocepts India in 2017.
  */
@@ -22,10 +26,13 @@ public class JiraIssue
     private String timeestimate;
     private String timespent;
     private String issuestatus;
-    private String startdate;
-    private String enddate;
+    private String actualstartdate;
+    private String actualenddate;
+    private String estimatedstartdate;
+    private String estimatedenddate;
     private String assignedto;
-    private String statuscolor;
+    private String effortoverrun;
+    private String scheduleoverrun;
 
     public String getId ()
     {
@@ -137,24 +144,24 @@ public class JiraIssue
         this.timeestimate = timeestimate;
     }
 
-    public String getStartdate ()
+    public String getActualstartdate ()
     {
-        return startdate;
+        return actualstartdate;
     }
 
-    public void setStartdate (final String startdate)
+    public void setActualstartdate (final String actualstartdate)
     {
-        this.startdate = startdate;
+        this.actualstartdate = actualstartdate;
     }
 
-    public String getEnddate ()
+    public String getActualenddate ()
     {
-        return enddate;
+        return actualenddate;
     }
 
-    public void setEnddate (final String enddate)
+    public void setActualenddate (final String actualenddate)
     {
-        this.enddate = enddate;
+        this.actualenddate = actualenddate;
     }
 
     public String getAssignedto ()
@@ -167,12 +174,35 @@ public class JiraIssue
         this.assignedto = assignedto;
     }
 
-    public String getStatuscolor ()
+    public String getEstimatedstartdate ()
+    {
+        return estimatedstartdate;
+    }
+
+    public void setEstimatedstartdate (final String estimatedstartdate)
+    {
+        this.estimatedstartdate = estimatedstartdate;
+    }
+
+    public String getEstimatedenddate ()
+    {
+        return estimatedenddate;
+    }
+
+    public void setEstimatedenddate (final String estimatedenddate)
+    {
+        this.estimatedenddate = estimatedenddate;
+    }
+
+
+    public String getEffortoverrun ()
     {
         int spent = this.timespent==null?0:Integer.parseInt(this.timespent);
         int orignalestimate = this.timeoriginalestimate==null?0:Integer.parseInt(this.timeoriginalestimate);
+        int timeremaining = this.timeestimate == null ? 0 : Integer.parseInt(this.timeestimate);
 
-        if(spent > orignalestimate){
+        if ((spent + timeremaining) > orignalestimate)
+        {
             return "flag-color-red";
         }
         else{
@@ -180,24 +210,25 @@ public class JiraIssue
         }
     }
 
-    @Override
-    public String toString ()
+    public String getScheduleoverrun () throws ParseException
     {
-        return "JiraIssue{" +
-                "id='" + id + '\'' +
-                ", project='" + project + '\'' +
-                ", creator='" + creator + '\'' +
-                ", issuetype='" + issuetype + '\'' +
-                ", summary='" + summary + '\'' +
-                ", priority='" + priority + '\'' +
-                ", created='" + created + '\'' +
-                ", timeoriginalestimate='" + timeoriginalestimate + '\'' +
-                ", timeestimate='" + timeestimate + '\'' +
-                ", timespent='" + timespent + '\'' +
-                ", issuestatus='" + issuestatus + '\'' +
-                ", startdate='" + startdate + '\'' +
-                ", enddate='" + enddate + '\'' +
-                ", assignedto='" + assignedto + '\'' +
-                '}';
+
+        if (null != this.getEstimatedenddate() && null != this.getActualenddate())
+        {
+            SimpleDateFormat sdf = new SimpleDateFormat("dd-MMM-yy");
+            Date estimateEndDt = sdf.parse(this.getEstimatedenddate());
+            Date actualEndDt = sdf.parse(this.getActualenddate());
+
+            if (actualEndDt.after(estimateEndDt))
+            {
+                return "flag-color-red";
+            }
+            else
+            {
+                return "flag-color-green";
+            }
+        }
+
+        return "";
     }
 }

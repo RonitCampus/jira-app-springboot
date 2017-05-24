@@ -134,10 +134,20 @@ public class JiraRepository {
                 }
 
                 /* Fetch actual start date and actual end date for issue */
-                StartDateAndEndDate startDateAndEndDate = getStartAndEndDate(jiraIssue.getId(),jiraIssue.getIssuetype(),jiraIssue.getIssuestatus());
+                StartDateAndEndDate startDateAndEndDate = getActualStartAndEndDate(jiraIssue.getId(), jiraIssue.getIssuetype(), jiraIssue.getIssuestatus());
 
-                jiraIssue.setStartdate(startDateAndEndDate.getStartdate());
-                jiraIssue.setEnddate(startDateAndEndDate.getEnddate());
+                jiraIssue.setActualstartdate(startDateAndEndDate.getStartdate());
+                jiraIssue.setActualenddate(startDateAndEndDate.getEnddate());
+
+
+
+                /* Fetch estimated start date and end date for issue*/
+
+                StartDateAndEndDate estimatedStartDateEndDate = this.getEstimatedStartAndEndDate(issueId, jiraIssue.getIssuetype());
+
+                jiraIssue.setEstimatedstartdate(estimatedStartDateEndDate.getStartdate());
+                jiraIssue.setEstimatedenddate(estimatedStartDateEndDate.getEnddate());
+
 
                 /* If the issue type is Epic or story fetch total time from them */
                 if(jiraIssue.getIssuetype().equalsIgnoreCase("10000") || jiraIssue.getIssuetype().equalsIgnoreCase("10001")){
@@ -199,10 +209,9 @@ public class JiraRepository {
 
 
     //Gets the actual startdate and actual end date for issue
-    private StartDateAndEndDate getStartAndEndDate(String issueId , String issueType, String issueStatus) throws SQLException
+    private StartDateAndEndDate getActualStartAndEndDate (String issueId, String issueType, String issueStatus) throws SQLException
     {
-
-        String query = "select min(startdate ::date ) as startdate, max(startdate :: date) as enddate from worklog where issueid in ( %s )";
+        String query = "select to_char( min(startdate ::date ), 'DD-Mon-YY' ) as startdate, to_char(max(startdate :: date),'DD-Mon-YY' ) as enddate from worklog where issueid in ( %s )";
         Statement statement = dbconfig.getInstance().createStatement();
         StartDateAndEndDate startDateAndEndDate = applicationContext.getBean(StartDateAndEndDate.class);
 
@@ -251,6 +260,82 @@ public class JiraRepository {
         return startDateAndEndDate;
     }
 
+
+    private StartDateAndEndDate getEstimatedStartAndEndDate (String issueId, String issueType) throws SQLException
+    {
+
+        Statement statement = dbconfig.getInstance().createStatement();
+        StartDateAndEndDate startDateAndEndDate = applicationContext.getBean(StartDateAndEndDate.class);
+
+        if ((!issueType.equalsIgnoreCase("10000")) && (!issueType.equalsIgnoreCase("10001")))
+        {
+
+            //fetch estimated start date
+            String estimatedStartdateQuery = String.format("select to_char( datevalue::date,'DD-Mon-YY') as estimatedstartdate from customfieldvalue where issue = %s and customfield = 10105", issueId);
+
+            ResultSet resultSet = statement.executeQuery(estimatedStartdateQuery);
+            if (resultSet.next())
+            {
+                startDateAndEndDate.setStartdate(resultSet.getString("estimatedstartdate"));
+            }
+
+            //fetch estimated end date
+
+
+            String estimatedEndDate = String.format("select to_char(datevalue::date,'DD-Mon-YY') as estimatedenddate from customfieldvalue where issue = %s and customfield = 10106", issueId);
+
+            resultSet = statement.executeQuery(estimatedEndDate);
+
+            if (resultSet.next())
+            {
+                startDateAndEndDate.setEnddate(resultSet.getString("estimatedenddate"));
+            }
+
+        }
+        else//fetch estimated start date and end date for epic , story
+        {
+            List<JiraIssueInfo> issueIds = new ArrayList<>();
+            this.getIssues(issueId, issueIds);
+            if (issueIds.size() > 0)
+            {
+                StringBuilder builder = new StringBuilder();
+
+                for (int i = 0; i < issueIds.size(); i++)
+                {
+                    builder.append(issueIds.get(i).getIssueId());
+                    if (!(i == issueIds.size() - 1))
+                    {
+                        builder.append(",");
+                    }
+                }
+
+
+                String estimatedStartdate = String.format("select to_char(min(datevalue::date),'DD-Mon-YY') as estimatedstartdate from customfieldvalue where issue in( %s)and customfield = 10105", builder.toString());
+
+
+                ResultSet resultSet = statement.executeQuery(estimatedStartdate);
+                if (resultSet.next())
+                {
+                    startDateAndEndDate.setStartdate(resultSet.getString("estimatedstartdate"));
+                }
+
+
+                String estimatedEnddate = String.format("select to_char(max(datevalue::date),'DD-Mon-YY') as estimatedenddate from customfieldvalue where issue in( %s ) and customfield = 10106", builder.toString());
+
+                resultSet = statement.executeQuery(estimatedEnddate);
+
+                if (resultSet.next())
+                {
+                    startDateAndEndDate.setEnddate(resultSet.getString("estimatedenddate"));
+                }
+
+            }
+
+        }
+
+        return startDateAndEndDate;
+    }
+
     //Gets the issue assigned to
     private String getAssignedTo(String issueId) throws SQLException
     {
@@ -266,7 +351,7 @@ public class JiraRepository {
         return null;
     }
 
-
+    //Gets parent status by looking at the child status for Epic only if all subtasks done -> epic ->done
     public String getParentStatusFromChild(String issueId) throws SQLException
     {
 
