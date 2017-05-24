@@ -4,10 +4,12 @@ import com.jiraapp.model.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 import org.springframework.stereotype.Repository;
+
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
 
 
 @Repository
@@ -252,7 +254,7 @@ public class JiraRepository {
     //Gets the issue assigned to
     private String getAssignedTo(String issueId) throws SQLException
     {
-        String sql = String.format("select customvalue from customfieldoption where id in (select customfield from customfieldvalue where id = %s )", issueId);
+        String sql = String.format("select customvalue from customfieldoption where customfield=10100 and id in (select stringvalue::numeric from customfieldvalue where issue = %s and customfield=10100 ) ", issueId);
 
         Statement statement = dbconfig.getInstance().createStatement();
         ResultSet resultSet = statement.executeQuery(sql);
