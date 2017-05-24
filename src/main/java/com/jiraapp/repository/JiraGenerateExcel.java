@@ -51,19 +51,22 @@ public class JiraGenerateExcel
             header.add("Epic");
             header.add("Story");
             header.add("Task");
-            header.add("Assignee");
-            header.add("Assignedto");
             header.add("Summary");
-            header.add("Startdate");
-            header.add("Enddate");
-            header.add("Timeestimated");
-            header.add("Timeworked");
-            header.add("Timeremaining");
+            header.add("Issue Type");
+            header.add("Assignee");
+            header.add("Assigned To");
+            header.add("Estimated Start Date");
+            header.add("Estimated End Date");
+            header.add("Actual Start Date");
+            header.add("Actual End Date");
+            header.add("Time Estimated");
+            header.add("Time Worked");
+            header.add("Time Remaining");
             header.add("Status");
 
             int rowid = 0;
             int cellid = 0;
-            row = spreadsheet.createRow(0);
+            row = spreadsheet.createRow(rowid);
 
             for (String key : header)
             {
@@ -128,20 +131,29 @@ public class JiraGenerateExcel
                 Cell taskCell = row.createCell(cellid++);
                 taskCell.setCellValue(taskSummary);
 
+                Cell summaryCell = row.createCell(cellid++);
+                summaryCell.setCellValue(jiraIssue.getSummary());
+
+                Cell issuetypeCell = row.createCell(cellid++);
+                issuetypeCell.setCellValue(jiraIssue.getIssuetype());
+
                 Cell assigneeCell= row.createCell(cellid++);
                 assigneeCell.setCellValue(jiraIssue.getCreator());
 
                 Cell assignedtoCell = row.createCell(cellid++);
                 assignedtoCell.setCellValue(jiraIssue.getAssignedto());
 
-                Cell summaryCell = row.createCell(cellid++);
-                summaryCell.setCellValue(jiraIssue.getSummary());
+                Cell estimatedstartdateCell = row.createCell(cellid++);
+                estimatedstartdateCell.setCellValue(jiraIssue.getEstimatedstartdate());
 
-                Cell startdateCell = row.createCell(cellid++);
-                startdateCell.setCellValue(jiraIssue.getStartdate());
+                Cell estimatedenddateCell = row.createCell(cellid++);
+                estimatedenddateCell.setCellValue(jiraIssue.getEstimatedenddate());
 
-                Cell enddateCell = row.createCell(cellid++);
-                enddateCell.setCellValue(jiraIssue.getEnddate());
+                Cell actualstartdateCell = row.createCell(cellid++);
+                actualstartdateCell.setCellValue(jiraIssue.getActualstartdate());
+
+                Cell actualenddateCell = row.createCell(cellid++);
+                actualenddateCell.setCellValue(jiraIssue.getActualenddate());
 
                 Cell timeestimatedCell = row.createCell(cellid++);
                 Integer timeorignalestimated = jiraIssue.getTimeoriginalestimate()==null?0:Integer.parseInt(jiraIssue.getTimeoriginalestimate());
