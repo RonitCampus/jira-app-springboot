@@ -63,6 +63,8 @@ public class JiraGenerateExcel
             header.add("Time Worked");
             header.add("Time Remaining");
             header.add("Status");
+            header.add("Effort overrun");
+            header.add("Schedule overrun");
 
             int rowid = 0;
             int cellid = 0;
@@ -169,6 +171,14 @@ public class JiraGenerateExcel
 
                 Cell statusCell = row.createCell(cellid++);
                 statusCell.setCellValue(jiraIssue.getIssuestatus());
+
+                Cell effortOverrunCell = row.createCell(cellid++);
+                effortOverrunCell.setCellValue(jiraIssue.getEffortoverrun().equalsIgnoreCase("flag-color-red"));
+
+
+                Cell scheduleOverrunCell = row.createCell(cellid++);
+                scheduleOverrunCell.setCellValue(jiraIssue.getScheduleoverrun().equalsIgnoreCase("flag-color-red"));
+
             }
 
 
@@ -190,7 +200,7 @@ public class JiraGenerateExcel
         }
     }
 
-    public String getProjectName(final String projectId) throws SQLException
+    public String getProjectName (final String projectId) throws SQLException
     {
         String sql = String.format("select pname from project where id = %s",projectId);
 

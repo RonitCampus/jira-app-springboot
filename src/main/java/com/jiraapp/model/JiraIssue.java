@@ -6,6 +6,7 @@ import org.springframework.stereotype.Component;
 
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.Calendar;
 import java.util.Date;
 
 /**
@@ -33,6 +34,41 @@ public class JiraIssue
     private String assignedto;
     private String effortoverrun;
     private String scheduleoverrun;
+
+    private static int getWorkingDaysBetweenTwoDates (Date startDate, Date endDate)
+    {
+        Calendar startCal = Calendar.getInstance();
+        startCal.setTime(startDate);
+
+        Calendar endCal = Calendar.getInstance();
+        endCal.setTime(endDate);
+
+        int workDays = 0;
+
+        //Return 0 if start and end are the same
+        if (startCal.getTimeInMillis() == endCal.getTimeInMillis())
+        {
+            return 0;
+        }
+
+        if (startCal.getTimeInMillis() > endCal.getTimeInMillis())
+        {
+            startCal.setTime(endDate);
+            endCal.setTime(startDate);
+        }
+
+        do
+        {
+            //excluding start date
+            startCal.add(Calendar.DAY_OF_MONTH, 1);
+            if (startCal.get(Calendar.DAY_OF_WEEK) != Calendar.SATURDAY && startCal.get(Calendar.DAY_OF_WEEK) != Calendar.SUNDAY)
+            {
+                ++workDays;
+            }
+        } while (startCal.getTimeInMillis() < endCal.getTimeInMillis()); //excluding end date
+
+        return workDays;
+    }
 
     public String getId ()
     {
@@ -194,7 +230,6 @@ public class JiraIssue
         this.estimatedenddate = estimatedenddate;
     }
 
-
     public String getEffortoverrun ()
     {
         int spent = this.timespent==null?0:Integer.parseInt(this.timespent);
@@ -212,23 +247,67 @@ public class JiraIssue
 
     public String getScheduleoverrun () throws ParseException
     {
+        SimpleDateFormat sdf = new SimpleDateFormat("dd-MMM-yy");
 
-        if (null != this.getEstimatedenddate() && null != this.getActualenddate())
+        if (this.issuestatus.equalsIgnoreCase("done"))
         {
-            SimpleDateFormat sdf = new SimpleDateFormat("dd-MMM-yy");
-            Date estimateEndDt = sdf.parse(this.getEstimatedenddate());
-            Date actualEndDt = sdf.parse(this.getActualenddate());
+            if (null != this.getEstimatedenddate() && null != this.getActualenddate())
+            {
 
-            if (actualEndDt.after(estimateEndDt))
-            {
-                return "flag-color-red";
-            }
-            else
-            {
-                return "flag-color-green";
+                Date estimateEndDt = sdf.parse(this.getEstimatedenddate());
+                Date actualEndDt = sdf.parse(this.getActualenddate());
+
+                if (actualEndDt.before(estimateEndDt))
+                {
+                    return "flag-color-green";
+                }
+                else
+                {
+                    return "flag-color-red";
+                }
             }
         }
+        else if (null != this.estimatedstartdate && null != this.actualstartdate && null != this.timespent)
+        {
 
+            if (this.actualstartdate.equalsIgnoreCase(this.estimatedstartdate))
+            {
+                Date startDate = sdf.parse(this.estimatedstartdate);
+
+                Date currentDate = sdf.parse(sdf.format(new Date()));
+
+                int workingDays = getWorkingDaysBetweenTwoDates(startDate, currentDate);
+
+                long expectedHoursWorked = ((workingDays * 8) * 3600);
+
+                long hoursWorked = Long.parseLong(this.timespent);
+
+
+                if (expectedHoursWorked == hoursWorked)
+                {
+                    return "flag-color-green";
+                }
+                else
+                {
+                    return "flag-color-red";
+                }
+            }
+            else if (null != this.estimatedstartdate && null != this.actualstartdate)
+            {
+                Date estimatedStartdt = sdf.parse(this.estimatedstartdate);
+                Date actaulStartDt = sdf.parse(this.actualstartdate);
+
+                if (actaulStartDt.after(estimatedStartdt))
+                {
+                    return "flag-color-red";
+                }
+                else
+                {
+                    return "flag-color-green";
+                }
+            }
+        }
         return "";
     }
+
 }
