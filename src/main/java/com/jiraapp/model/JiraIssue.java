@@ -13,7 +13,7 @@ import java.util.Date;
  * Created by Infocepts India in 2017.
  */
 @Component
-@Scope(BeanDefinition.SCOPE_PROTOTYPE)
+@Scope (BeanDefinition.SCOPE_PROTOTYPE)
 public class JiraIssue
 {
     private String id;
@@ -137,7 +137,7 @@ public class JiraIssue
 
     public void setCreated (final String created)
     {
-        this.created = created.substring(0,10);
+        this.created = created.substring(0, 10);
     }
 
     public String getTimespent ()
@@ -232,15 +232,16 @@ public class JiraIssue
 
     public String getEffortoverrun ()
     {
-        int spent = this.timespent==null?0:Integer.parseInt(this.timespent);
-        int orignalestimate = this.timeoriginalestimate==null?0:Integer.parseInt(this.timeoriginalestimate);
+        int spent = this.timespent == null ? 0 : Integer.parseInt(this.timespent);
+        int orignalestimate = this.timeoriginalestimate == null ? 0 : Integer.parseInt(this.timeoriginalestimate);
         int timeremaining = this.timeestimate == null ? 0 : Integer.parseInt(this.timeestimate);
 
         if ((spent + timeremaining) > orignalestimate)
         {
             return "flag-color-red";
         }
-        else{
+        else
+        {
             return "flag-color-green";
         }
     }
@@ -267,43 +268,42 @@ public class JiraIssue
                 }
             }
         }
-        else if (null != this.estimatedstartdate && null != this.actualstartdate && null != this.timespent)
+        else
         {
-
-            if (this.actualstartdate.equalsIgnoreCase(this.estimatedstartdate))
+            if (null != this.estimatedenddate && null != this.timeestimate)
             {
-                Date startDate = sdf.parse(this.estimatedstartdate);
+                Date endDate = sdf.parse(this.estimatedenddate);
 
                 Date currentDate = sdf.parse(sdf.format(new Date()));
 
-                int workingDays = getWorkingDaysBetweenTwoDates(startDate, currentDate);
-
-                long expectedHoursWorked = ((workingDays * 8) * 3600);
-
-                long hoursWorked = Long.parseLong(this.timespent);
-
-
-                if (expectedHoursWorked == hoursWorked)
+                if (currentDate.before(endDate) || currentDate.equals(endDate))
                 {
-                    return "flag-color-green";
+                    int workingDays = getWorkingDaysBetweenTwoDates(currentDate, endDate);
+
+                    long maxworkthatcanbeDone = (((workingDays + 1) * 8) * 3600);
+
+                    long Remainingwork = Long.parseLong(this.timeestimate);
+
+
+                    if (maxworkthatcanbeDone > Remainingwork)
+                    {
+                        return "flag-color-green";
+                    }
+                    else
+                    {
+                        return "flag-color-red";
+                    }
                 }
                 else
                 {
-                    return "flag-color-red";
-                }
-            }
-            else if (null != this.estimatedstartdate && null != this.actualstartdate)
-            {
-                Date estimatedStartdt = sdf.parse(this.estimatedstartdate);
-                Date actaulStartDt = sdf.parse(this.actualstartdate);
 
-                if (actaulStartDt.after(estimatedStartdt))
-                {
-                    return "flag-color-red";
-                }
-                else
-                {
-                    return "flag-color-green";
+                    if (null != this.timeestimate)
+                    {
+                        if (Long.parseLong(this.timeestimate) > 0)
+                            return "flag-color-red";
+                        else
+                            return "flag-color-green";
+                    }
                 }
             }
         }
