@@ -73,7 +73,7 @@ public class JiraRepository {
         else {
             try {
                 Statement statement = dbconfig.getInstance().createStatement();
-                String sql = String.format("select * from jiraissue where id in (select destination from issuelink where source = %s )", sourceId);
+                String sql = String.format("select id, issuetype from jiraissue where id in (select destination from issuelink where source = %s )", sourceId);
 
                 ResultSet resultSet = statement.executeQuery(sql);
 
@@ -261,6 +261,7 @@ public class JiraRepository {
     }
 
 
+    /*Gets the estimated start date and end date for issue*/
     private StartDateAndEndDate getEstimatedStartAndEndDate (String issueId, String issueType) throws SQLException
     {
 
